@@ -41,3 +41,11 @@ A Tampermonkey userscript that adds LaTeX rendering capability to Google's Noteb
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
+
+## Third-Party Licenses
+
+This project uses the following third-party libraries:
+
+- **KaTeX** - [MIT License](https://github.com/KaTeX/KaTeX/blob/main/LICENSE)
+  - Copyright (c) 2013-2020 Khan Academy and other contributors
+  - Used for rendering LaTeX equations 

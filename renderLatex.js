@@ -9,6 +9,12 @@
 // @require      https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js
 // @require      https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js
 // @resource     katexCSS https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css
+// @license      MIT
+// @copyright    2025, ergs0204 (https://github.com/ergs0204)
+// 
+// KaTeX is used under the MIT License
+// Copyright (c) 2013-2020 Khan Academy and other contributors
+// https://github.com/KaTeX/KaTeX/blob/main/LICENSE
 // ==/UserScript==
 
 (function () {
