@@ -49,3 +49,8 @@ This project uses the following third-party libraries:
 - **KaTeX** - [MIT License](https://github.com/KaTeX/KaTeX/blob/main/LICENSE)
   - Copyright (c) 2013-2020 Khan Academy and other contributors
   - Used for rendering LaTeX equations 
+
+## Known Issues
+
+- **Underscore `_` breaks rendering**: NotebookLM treats underscores as markdown for _italic_ text, which splits LaTeX expressions across different DOM nodes. As a result, formulas like `$F = G \frac{m_1 m_2}{r^2}$` may not render correctly if `_` triggers a markdown split.
+- This is the limitation of NotebookLM's current markdown handling. Unfortunately, there's no reliable workaround—LaTeX rendering may improve once NotebookLM offers better support natively.
