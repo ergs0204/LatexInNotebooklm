@@ -16,11 +16,14 @@ A Tampermonkey userscript that adds LaTeX rendering capability to Google's Noteb
    - [Edge](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd)
    - [Safari](https://apps.apple.com/us/app/tampermonkey/id1482490089)
 
-2.  Install the script:
-   - Open Tampermonkey dashboard
-   - Create a new script
-   - Copy and paste the entire content of `renderLatex.js`
-   - Save the script
+2. Install the script:
+   - **Recommended**: [Click here to install via `.user.js` file](https://raw.githubusercontent.com/ergs0204/LatexInNotebooklm/refs/heads/main/renderLatex.user.js)
+     - This will open the script in Tampermonkey for one-click installation.
+   - **Manual method**:
+     - Open the Tampermonkey dashboard
+     - Create a new script
+     - Copy and paste the entire content of `renderLatex.user.js`
+     - Save the script
 
 ## Usage
 
