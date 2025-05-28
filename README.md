@@ -1,3 +1,4 @@
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ergs0204/LatexInNotebooklm)
 # LaTeX in Notebooklm
 
 A Tampermonkey userscript that adds LaTeX rendering capability to Google's Notebooklm using KaTeX. This allows you to write mathematical formulas with standard LaTeX syntax using `$formula$` delimiters.
