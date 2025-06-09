@@ -34,9 +34,12 @@ A Tampermonkey userscript that adds LaTeX rendering capability to Google's Noteb
 
 ## Examples
 
-- `$E = mc^2$` - Einstein's mass-energy equivalence
-- `$F = G \frac{m_1 m_2}{r^2}$` - Newton's law of universal gravitation
-- `$\int_{a}^{b} f(x) \, dx$` - Definite integral
+
+**Without LaTeX rendering:**
+![Without LaTeX rendering](res/without_render.png)
+
+**With LaTeX rendering enabled:**
+![With LaTeX rendering](res/with_render.png)
 
 ## Dependencies
 
@@ -44,7 +47,7 @@ A Tampermonkey userscript that adds LaTeX rendering capability to Google's Noteb
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Third-Party Licenses
 
@@ -52,7 +55,7 @@ This project uses the following third-party libraries:
 
 - **KaTeX** - [MIT License](https://github.com/KaTeX/KaTeX/blob/main/LICENSE)
   - Copyright (c) 2013-2020 Khan Academy and other contributors
-  - Used for rendering LaTeX equations 
+  - Used for rendering LaTeX equations
 
 ## Known Issues
 
