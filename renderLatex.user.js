@@ -11,7 +11,7 @@
 // @resource     katexCSS https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css
 // @license      MIT
 // @copyright    2025, ergs0204 (https://github.com/ergs0204)
-// 
+//
 // KaTeX is used under the MIT License
 // Copyright (c) 2013-2020 Khan Academy and other contributors
 // https://github.com/KaTeX/KaTeX/blob/main/LICENSE
@@ -28,12 +28,17 @@
     document.head.appendChild(link);
   };
 
+  const delimiters = [
+    {left: "$$", right: "$$", display: true},
+    {left: "$", right: "$", display: false},
+    {left: "\\(", right: "\\)", display: false},
+    {left: "\\[", right: "\\]", display: true},
+  ];
+
   // Render LaTeX using KaTeX auto-render
   const renderLaTeX = () => {
     renderMathInElement(document.body, {
-      delimiters: [
-        { left: "$", right: "$", display: false }
-      ],
+      delimiters: delimiters,
       ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
     });
   };
@@ -46,7 +51,7 @@
           if (node.nodeType === Node.ELEMENT_NODE) {
             try {
               renderMathInElement(node, {
-                delimiters: [{ left: "$", right: "$", display: false }],
+                delimiters: delimiters,
                 ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
               });
             } catch (e) {
