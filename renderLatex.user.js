@@ -1,77 +1,72 @@
 // ==UserScript==
-// @name         Render LaTeX with KaTeX ($...$)
+// @name         Render LaTeX in NotebookLM (Conflict Evasion)
 // @namespace    http://tampermonkey.net/
-// @version      1.0
-// @description  Renders inline LaTeX formulas written as $formula$ using KaTeX
-// @author       ergs0204
+// @version      4.0
+// @description  Robustly renders LaTeX by ignoring the active element to prevent conflicts with NotebookLM's native Markdown parser.
+// @author       ergs0204 (with Zolangui mod)
 // @match        https://notebooklm.google.com/*
 // @grant        none
 // @require      https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js
 // @require      https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js
 // @resource     katexCSS https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css
 // @license      MIT
-// @copyright    2025, ergs0204 (https://github.com/ergs0204)
-//
-// KaTeX is used under the MIT License
-// Copyright (c) 2013-2020 Khan Academy and other contributors
-// https://github.com/KaTeX/KaTeX/blob/main/LICENSE
 // ==/UserScript==
 
 (function () {
-  'use strict';
+    'use strict';
 
-  // Inject KaTeX CSS into the page
-  const addKaTeXStyles = () => {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css';
-    document.head.appendChild(link);
-  };
+    const addKaTeXStyles = () => {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css';
+        document.head.appendChild(link);
+    };
 
-  const delimiters = [
-    {left: "$$", right: "$$", display: true},
-    {left: "$", right: "$", display: false},
-    {left: "\\(", right: "\\)", display: false},
-    {left: "\\[", right: "\\]", display: true},
-  ];
+    const ignoreClass = 'katex-ignore-active-render';
+    const katexOptions = {
+        delimiters: [
+            { left: "$$", right: "$$", display: true },
+            { left: "$", right: "$", display: false },
+            { left: "\\(", right: "\\)", display: false },
+            { left: "\\[", right: "\\]", display: true }
+        ],
+        ignoredClasses: [ignoreClass], // The key to avoiding conflicts!
+        throwOnError: false
+    };
 
-  // Render LaTeX using KaTeX auto-render
-  const renderLaTeX = () => {
-    renderMathInElement(document.body, {
-      delimiters: delimiters,
-      ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
-    });
-  };
+    let renderTimeout;
+    const renderPageWithIgnore = () => {
+        const activeEl = document.activeElement;
+        let hasIgnoreClass = false;
 
-  // Observe changes and re-render math (for dynamic pages)
-  const observeMutations = () => {
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        for (const node of mutation.addedNodes) {
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            try {
-              renderMathInElement(node, {
-                delimiters: delimiters,
-                ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
-              });
-            } catch (e) {
-              console.error("KaTeX render error:", e);
+        try {
+            if (activeEl && (activeEl.isContentEditable || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'INPUT')) {
+                activeEl.classList.add(ignoreClass);
+                hasIgnoreClass = true;
             }
-          }
+            renderMathInElement(document.body, katexOptions);
+        } catch (e) {
+            console.error("KaTeX render error:", e);
+        } finally {
+            if (hasIgnoreClass && activeEl) {
+                activeEl.classList.remove(ignoreClass);
+            }
         }
-      }
+    };
+
+    const observer = new MutationObserver(() => {
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(renderPageWithIgnore, 300); // 300ms delay
     });
 
     observer.observe(document.body, {
-      childList: true,
-      subtree: true,
+        childList: true,
+        subtree: true
     });
-  };
 
-  // Run the script
-  window.addEventListener('load', () => {
-    addKaTeXStyles();
-    renderLaTeX();
-    observeMutations();
-  });
+    window.addEventListener('load', () => {
+        addKaTeXStyles();
+        renderPageWithIgnore();
+    });
+
 })();
