@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Render LaTeX in NotebookLM
 // @namespace    http://tampermonkey.net/
-// @version      5.6
+// @version      2.0
 // @description  A minimal, stable, and robust renderer focusing solely on perfect LaTeX display without extra features.
 // @author       ergs0204 (with Zolangui modifications)
 // @match        https://notebooklm.google.com/*
