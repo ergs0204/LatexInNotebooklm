@@ -18,7 +18,7 @@ A Tampermonkey userscript that adds LaTeX rendering capability to Google's Noteb
    - [Safari](https://apps.apple.com/us/app/tampermonkey/id1482490089)
    
     > [!IMPORTANT]  
-    > On Chromium-based browsers (Chrome, Brave, Vivaldi, Edge, Opera, etc.),  
+    > On some Chromium-based browsers (Chrome, Brave, Vivaldi, Edge, Opera, etc.),  
     > Tampermonkey will not run user scripts unless you explicitly enable:  
     > `Manage Extensions > Tampermonkey > Details > Allow User Scripts`  
     > Make sure this toggle is **ON**, otherwise the script will never execute.  
