@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Render LaTeX in NotebookLM
 // @namespace    http://tampermonkey.net/
-// @version      2.0
-// @description  A minimal, stable, and robust renderer focusing solely on perfect LaTeX display without extra features.
-// @author       ergs0204 (with Zolangui modifications)
+// @version      2.3
+// @description  Robust KaTeX rendering for NotebookLM
+// @author       ergs0204 (with Zolangui + adamnelsonarcher)
 // @match        https://notebooklm.google.com/*
 // @grant        GM_addStyle
 // @require      https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js
@@ -12,90 +12,187 @@
 // @license      MIT
 // ==/UserScript==
 
+// Improvements by adamnelsonarcher (2025)
+// - Coalesces multi-node $$ and $ spans
+// - Escapes unescaped %
+// - Adds table-cell and <br> normalization
+// - Fixes inline math and nested quantifiers rendering
+
 (function () {
-    'use strict';
+	'use strict';
 
-    const addKaTeXStyles = () => {
-        const katexLink = document.createElement('link');
-        katexLink.rel = 'stylesheet';
-        katexLink.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css';
-        document.head.appendChild(katexLink);
-    };
+	const addKaTeXStyles = () => {
+		const link = document.createElement('link');
+		link.rel = 'stylesheet';
+		link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css';
+		document.head.appendChild(link);
+	};
 
-    const addCustomStyles = () => {
-        const css = `.katex { vertical-align: -0.1em; }`;
-        GM_addStyle(css);
-    };
+	const addCustomStyles = () => {
+		const css = `.katex { vertical-align: -0.1em; }`;
+		if (typeof GM_addStyle === 'function') {
+			GM_addStyle(css);
+		} else {
+			const style = document.createElement('style');
+			style.textContent = css;
+			document.head.appendChild(style);
+		}
+	};
 
-    const preprocessAndSanitize = (node) => {
-        if (node.nodeType === Node.TEXT_NODE) {
-            let originalText = node.nodeValue;
-            let newText = originalText;
+	const candidateSelector = 'p, div, li, section, article, span, td, th';
 
-            const displayMathRegex = /\$\$(.*?)\$\$/gs;
-            let tempTextForDisplay = newText;
-            let match_display;
-            while ((match_display = displayMathRegex.exec(tempTextForDisplay)) !== null) {
-                const content = match_display[1].trim();
-                const isComplex = content.length > 25 || content.includes('\\begin') || content.includes('\\frac') || content.includes('\\sum') || content.includes('\\int') || content.includes('\\lim') || content.includes('\\\\') || content.split(' ').length > 4;
-                if (!isComplex) {
-                    newText = newText.replace(`$$${match_display[1]}$$`, `$${content}$`);
-                }
-            }
+	const convertBRsInsideMathyBlocks = (root) => {
+		const candidates = root.querySelectorAll(candidateSelector);
+		candidates.forEach(el => {
+			const tc = el.textContent || '';
+			// If the text looks like it contains math delimiters, normalize <br> → '\n'
+			if ((tc.match(/[\$]{2}/g) || []).length >= 2 || (tc.match(/\$/g) || []).length >= 2 || (tc.match(/\\\[/g) || []).length >= 1) {
+				el.querySelectorAll('br').forEach(br => br.replaceWith(document.createTextNode('\n')));
+				el.normalize();
+			}
+		});
+	};
 
-            if (newText !== originalText) {
-                node.nodeValue = newText;
-            }
-        } else if (node.nodeType === Node.ELEMENT_NODE) {
-            if (['SCRIPT', 'STYLE', 'TEXTAREA', 'PRE', 'CODE'].includes(node.tagName)) {
-                return;
-            }
-            for (const child of Array.from(node.childNodes)) {
-                preprocessAndSanitize(child);
-            }
-        }
-    };
+	// Map a textContent offset to (node,offset) in DOM
+	const pointAtOffset = (el, target) => {
+		const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+		let node, seen = 0, last = null;
+		while ((node = walker.nextNode())) {
+			last = node;
+			const len = node.nodeValue.length;
+			if (seen + len >= target) {
+				return { node, offset: target - seen };
+			}
+			seen += len;
+		}
+		return last ? { node: last, offset: last.nodeValue.length } : null;
+	};
 
-    const ignoreClass = 'katex-ignore-active-render';
-    const katexOptions = {
-        delimiters: [
-            { left: "$$", right: "$$", display: true }, { left: "$", right: "$", display: false },
-            { left: "\\(", right: "\\)", display: false }, { left: "\\[", right: "\\]", display: true }
-        ],
-        ignoredClasses: [ignoreClass],
-        throwOnError: false
-    };
+	// Escape stray % in LaTeX math content
+	const sanitizeMathContent = (s) => {
+		// Replace unescaped % with \%
+		return s.replace(/(?<!\\)%/g, '\\%');
+	};
 
-    let renderTimeout;
-    const renderPageWithIgnore = () => {
-        const activeEl = document.activeElement;
-        let hasIgnoreClass = false;
-        try {
-            if (activeEl && (activeEl.isContentEditable || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'INPUT')) {
-                activeEl.classList.add(ignoreClass);
-                hasIgnoreClass = true;
-            }
-            preprocessAndSanitize(document.body);
-            renderMathInElement(document.body, katexOptions);
-        } catch (e) {
-            console.error("KaTeX render error:", e);
-        } finally {
-            if (hasIgnoreClass && activeEl) {
-                activeEl.classList.remove(ignoreClass);
-            }
-        }
-    };
+	const coalesceForDelims = (root, leftDelim, rightDelim, sanitizeFn) => {
+		const containers = root.querySelectorAll(candidateSelector);
+		containers.forEach(el => {
+			el.normalize();
+			let tc = el.textContent || '';
+			const L = leftDelim.length, R = rightDelim.length;
 
-    const observer = new MutationObserver(() => {
-        clearTimeout(renderTimeout);
-        renderTimeout = setTimeout(renderPageWithIgnore, 300);
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
+			if (tc.indexOf(leftDelim) === -1 || tc.indexOf(rightDelim) === -1) return;
 
-    window.addEventListener('load', () => {
-        addKaTeXStyles();
-        addCustomStyles();
-        renderPageWithIgnore();
-    });
+			let startFrom = 0;
+			while (true) {
+				tc = el.textContent || '';
+				let open = tc.indexOf(leftDelim, startFrom);
+				if (open === -1) break;
+                
+				if (leftDelim === '$' && tc.slice(open, open + 2) === '$$') {
+					startFrom = open + 2;
+					continue;
+				}
 
+				let close = tc.indexOf(rightDelim, open + L);
+				if (close === -1) break;
+
+				if (leftDelim === '$') {
+					const before = tc[open - 1];
+					if (before === '\\') { startFrom = open + 1; continue; }
+					while (close !== -1) {
+						const prev = tc[close - 1];
+						const isDouble = tc.slice(close, close + 2) === '$$';
+						if (prev !== '\\' && !isDouble) break;
+						close = tc.indexOf('$', close + 1);
+					}
+					if (close === -1) break;
+				}
+
+				const p1 = pointAtOffset(el, open);
+				const p2 = pointAtOffset(el, close + R);
+				if (!p1 || !p2) break;
+
+				const range = document.createRange();
+				range.setStart(p1.node, p1.offset);
+				range.setEnd(p2.node, p2.offset);
+
+				const exact = tc.slice(open, close + R);
+				const inner = exact.slice(L, exact.length - R);
+				const innerSan = sanitizeFn ? sanitizeFn(inner) : inner;
+				const rebuilt = leftDelim + innerSan + rightDelim;
+
+				range.deleteContents();
+				const tn = document.createTextNode(rebuilt);
+
+				const anchor = pointAtOffset(el, open);
+				if (anchor) {
+					if (anchor.offset > 0) {
+						anchor.node.splitText(anchor.offset);
+						anchor.node.parentNode.insertBefore(tn, anchor.node.nextSibling);
+					} else {
+						anchor.node.parentNode.insertBefore(tn, anchor.node);
+					}
+				} else {
+					el.appendChild(tn);
+				}
+
+				el.normalize();
+				startFrom = open + rebuilt.length;
+			}
+		});
+	};
+
+	const ignoreClass = 'katex-ignore-active-render';
+	const katexOptions = {
+		delimiters: [
+			{ left: "$$", right: "$$", display: true },
+			{ left: "$", right: "$", display: false },
+			{ left: "\\(", right: "\\)", display: false },
+			{ left: "\\[", right: "\\]", display: true }
+		],
+		ignoredClasses: [ignoreClass],
+		ignoredTags: ["script","noscript","style","textarea","pre","code"],
+		throwOnError: false
+	};
+
+	let renderTimeout;
+	const renderPageWithIgnore = () => {
+		const activeEl = document.activeElement;
+		let hasIgnoreClass = false;
+		try {
+			if (activeEl && (activeEl.isContentEditable || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'INPUT')) {
+				activeEl.classList.add(ignoreClass);
+				hasIgnoreClass = true;
+			}
+
+			convertBRsInsideMathyBlocks(document.body);
+
+			// Coalesce and sanitize in safe order: $$ first, then $; also support \[ \] / \( \)
+			coalesceForDelims(document.body, '$$', '$$', sanitizeMathContent);
+			coalesceForDelims(document.body, '$', '$', sanitizeMathContent);
+			coalesceForDelims(document.body, '\\[', '\\]', sanitizeMathContent);
+			coalesceForDelims(document.body, '\\(', '\\)', sanitizeMathContent);
+
+			renderMathInElement(document.body, katexOptions);
+		} catch (e) {
+			console.error('KaTeX render error:', e);
+		} finally {
+			if (hasIgnoreClass && activeEl) {
+				activeEl.classList.remove(ignoreClass);
+			}
+		}
+	};
+
+	const observer = new MutationObserver(() => {
+		clearTimeout(renderTimeout);
+		renderTimeout = setTimeout(renderPageWithIgnore, 250);
+	});
+
+	window.addEventListener('load', () => {
+		addKaTeXStyles();
+		addCustomStyles();
+		renderPageWithIgnore();
+		observer.observe(document.body, { childList: true, subtree: true });
+	});
 })();
