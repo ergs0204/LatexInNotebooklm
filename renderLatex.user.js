@@ -46,7 +46,7 @@
 		candidates.forEach(el => {
 			const tc = el.textContent || '';
 			// If the text looks like it contains math delimiters, normalize <br> → '\n'
-			if ((tc.match(/[\$]{2}/g) || []).length >= 2 || (tc.match(/\$/g) || []).length >= 2 || tc.includes('\\[')) || tc.includes('\\(')) {
+			if ((tc.match(/[\$]{2}/g) || []).length >= 2 || (tc.match(/\$/g) || []).length >= 2 || tc.includes('\\[') || tc.includes('\\(')) {
 				el.querySelectorAll('br').forEach(br => br.replaceWith(document.createTextNode('\n')));
 				el.normalize();
 			}
@@ -196,4 +196,5 @@
 		observer.observe(document.body, { childList: true, subtree: true });
 	});
 })();
+
 
