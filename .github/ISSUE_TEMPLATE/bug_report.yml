@@ -1,0 +1,55 @@
+name: Bug report
+description: Report a reproducible problem with LaTeX rendering in NotebookLM
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to report a problem. Do not include private NotebookLM content.
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      description: Include the browser name and version.
+      placeholder: Chrome 126
+    validations:
+      required: true
+  - type: input
+    id: manager
+    attributes:
+      label: Userscript manager
+      description: Include the manager name and version.
+      placeholder: Tampermonkey 5.1
+    validations:
+      required: true
+  - type: textarea
+    id: expression
+    attributes:
+      label: Minimal LaTeX example
+      description: Provide the smallest non-sensitive expression that reproduces the issue.
+      render: latex
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+      description: Explain what you expected and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console errors
+      description: Paste relevant browser console errors, with sensitive content removed.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues for this problem.
+          required: true
+        - label: I removed private NotebookLM content from this report.
+          required: true
