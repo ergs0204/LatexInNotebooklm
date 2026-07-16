@@ -3,6 +3,9 @@
 
 A Tampermonkey userscript that adds LaTeX rendering capability to Google's Notebooklm using KaTeX. This allows you to write mathematical formulas with standard LaTeX syntax using `$formula$` delimiters.
 
+> [!NOTE]
+> NotebookLM announced native LaTeX rendering in October 2025. Most users should try the built-in support first. This userscript remains available for older behavior, unsupported contexts, and community experimentation, but it may overlap with or conflict with native rendering as NotebookLM changes.
+
 ## Features
 
 - Renders inline LaTeX formulas using `$formula$` syntax
